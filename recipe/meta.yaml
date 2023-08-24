@@ -2,7 +2,7 @@
 {% set version = "0.4.3" %}
 
 package:
-  name: {{ name|lower }}
+  name: {{ name|lower }}-split
   version: {{ version }}
 
 source:
@@ -11,73 +11,85 @@ source:
 
 build:
   number: 0
-  noarch: python
-  script: cd ./python/interpret/ && {{ PYTHON }} -m pip install . -vv
 
-requirements:
-  host:
-    - python >=3.7.*
-    - pip
-    - setuptools
-  run:
-    - python >=3.7.*
-    - interpret-core =={{ version }}
-    # in setup.py
-    - setuptools
-    # Equiv. to required.
-    - numpy >=1.11.1
-    - scipy >=0.18.1
-    - pandas >=0.19.2
-    - scikit-learn >=0.18.1
-    - joblib >=0.11
-    # Equiv. to extras.
-    - psutil >=5.6.2
-    - ipykernel >=4.10.0
-    - ipython >=5.5.0
-    - plotly >=3.8.1
-    - lime >=0.1.1.33
-    - SALib >=1.3.3
-    - shap >=0.28.5
-    - dill >=0.2.5
-    # - skope-rules >=1.0.1    fails on python 3.10
-    - treeinterpreter >=0.2.2
-    - dash >=1.0.0 # dash 2.* removed the dependencies on: dash-html-components, dash-core-components, dash-table
-    - dash-core-components >=1.0.0 # dash 2.* removes the need for this dependency
-    - dash-html-components >=1.0.0 # dash 2.* removes the need for this dependency
-    - dash-table >=4.1.0 # dash 2.* removes the need for this dependency
-    - dash_cytoscape >=0.1.1
-    - gevent >=1.3.6
-    - requests >=2.19.0
+outputs:
+  - name: {{ name }}-core
+    script: build_interpret-core.sh 
+    requirements:
+      build:
+        - {{ compiler('c') }}
+        - {{ compiler('cxx') }}
+        - nodejs ==16.*
+      host:
+        - setuptools
+        - wheel
+        - pip
+        - python
+      run:
+        - python
+        - numpy >=1.11.1
+        - scipy >=0.18.1
+        - pandas >=0.19.2
+        - scikit-learn >=0.18.1
+        - joblib >=0.11
+    test:
+      imports:
+        - interpret
 
-test:
-  requires:
-    # for pip check
-    - pip
-    # pure test requirements
-    - pytest >=4.3.0
-    - pytest-runner >=4.4
-    - pytest-xdist >=1.29
-    - nbconvert >=5.4.1
-    - selenium >=3.141.0
-    - pytest-cov >=2.6.1
-    # ----remove linter temporarily   - flake8 >=3.7.7
-    - jupyter >=1.0.0
-    - ipywidgets >=7.4.2
-  imports:
-    - interpret
-  # commands:
-    # - pip check
+  - name: {{ name }}
+    script: build_interpret.sh 
+    requirements:
+      host:
+        - python
+        - wheel
+        - pip
+        - setuptools
+      run:
+        - python
+        - interpret-core =={{ version }}
+        # Equiv. to extras.
+        - psutil >=5.6.2 
+        - ipykernel >=4.10.0
+        - ipython >=5.5.0
+        - plotly >=3.8.1
+        - lime >=0.1.1.33
+        - SALib >=1.3.3
+        - shap >=0.28.5
+        - dill >=0.2.5
+        # - skope-rules >=1.0.1    fails on python 3.10
+        - treeinterpreter >=0.2.2
+        - dash >=2.0.0 # dash 2.* removed the dependencies on: dash-html-components, dash-core-components, dash-table
+        - dash_cytoscape >=0.1.1
+        - gevent >=1.3.6
+        - requests >=2.19.0
+
+    test:
+      source_files:
+        - python/interpret-core/tests
+          #requires:
+          #- pytest
+          #- pytest-runner >=4.4
+          #- pytest-xdist >=1.29
+          #- nbconvert >=5.4.1
+          #- selenium >=3.141.0
+          #- pytest-cov >=2.6.1
+          #- flake8 >=3.7.7
+          #- jupyter >=1.0.0
+          #- ipywidgets >=7.4.2
+      imports:
+        - interpret
+          #commands:
+          #- python -m pytest python/interpret-core/tests -vv -k "not test_ebm_predict_and_contrib_logits"
 
 about:
   home: https://github.com/interpretml/interpret
   summary: Fit interpretable models. Explain blackbox machine learning.
   description: |
     In the beginning machines learned in darkness, and data scientists struggled in the void to explain them.
-
     Let there be light.
-
     https://github.com/interpretml/interpret
   license: MIT
+  license_family: MIT
   license_file: LICENSE
   doc_url: https://interpret.ml/docs/getting-started
   dev_url: https://interpret.ml/docs/installation-guide.html
