@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 
-$PYTHON -m pip install ./python/interpret-core/ -vv --no-deps --no-build-isolation
+pushd python/interpret-core/
+$PYTHON -m pip install . -vv --no-deps --no-build-isolation
 

@@ -11,10 +11,12 @@ source:
 
 build:
   number: 0
+  skip: true  # [linux and s390x]
 
 outputs:
   - name: {{ name }}-core
-    script: build_interpret-core.sh 
+    script: build_interpret-core.sh  # [unix]
+    script: bld_interpret-core.bat  # [win]
     requirements:
       build:
         - {{ compiler('c') }}
@@ -37,7 +39,8 @@ outputs:
         - interpret
 
   - name: {{ name }}
-    script: build_interpret.sh 
+    script: build_interpret.sh  # [unix]
+    script: bld_interpret.bat  # [win]
     requirements:
       host:
         - python
