@@ -26,10 +26,6 @@ outputs:
         - {{ compiler('cxx') }}
         - make  # [unix]
         - m2-make  # [win]
-      run:
-        - libcxx  # [osx]
-        - libstdcxx-ng  # [linux]
-
     test:
       commands:
         - if not exist %LIBRARY_BIN%\\libebm.dll exit 1  # [win]
@@ -58,6 +54,8 @@ outputs:
         - pandas >=0.19.2
         - scikit-learn >=0.18.1
         - joblib >=0.11
+        - libgcc-ng  # [linux]
+        - libcxx  # [osx]
         - libebm  =={{ version }}
     test:
       imports:
