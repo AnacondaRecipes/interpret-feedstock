@@ -8,10 +8,12 @@ package:
 source:
   url: https://github.com/interpretml/interpret/archive/db1a6f47b9bac288a7df80b2e489c327ce895751.tar.gz
   sha256: a083d22c879aca720fbaae077a65294d292b4bbf2977effac66cd947ee3e25ca
+  patches:
+    - patches/rename-ebm-dylib-osx-arm64.patch
 
 build:
   number: 0
-  skip: true  # [linux and s390x]
+  skip: true  # [linux and (s390x or aarch64 or ppc64le)]
 
 outputs:
   - name: {{ name }}-core
@@ -24,6 +26,7 @@ outputs:
         - nodejs ==16.*
         - make  # [unix]
         - m2-make  # [win]
+        - patch
       host:
         - setuptools
         - wheel
@@ -71,20 +74,20 @@ outputs:
     test:
       source_files:
         - python/interpret-core/tests
-          #requires:
-          #- pytest
-          #- pytest-runner >=4.4
-          #- pytest-xdist >=1.29
-          #- nbconvert >=5.4.1
-          #- selenium >=3.141.0
-          #- pytest-cov >=2.6.1
-          #- flake8 >=3.7.7
-          #- jupyter >=1.0.0
-          #- ipywidgets >=7.4.2
+      requires:
+        - pytest
+        - pytest-runner >=4.4
+        - pytest-xdist >=1.29
+        - nbconvert >=5.4.1
+        - selenium >=3.141.0
+        - pytest-cov >=2.6.1
+        - flake8 >=3.7.7
+        - jupyter >=1.0.0
+        - ipywidgets >=7.4.2
       imports:
         - interpret
-          #commands:
-          #- python -m pytest python/interpret-core/tests -vv -k "not test_ebm_predict_and_contrib_logits"
+      commands:
+        - python -m pytest python/interpret-core/tests -vv -k "not test_ebm_predict_and_contrib_logits"
 
 about:
   home: https://github.com/interpretml/interpret
