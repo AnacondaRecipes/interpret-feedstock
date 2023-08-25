@@ -42,6 +42,8 @@ outputs:
     requirements:
       build:
         - nodejs ==16.*
+        - {{ compiler('c') }}
+        - {{ compiler('cxx') }}
       host:
         - setuptools
         - wheel
