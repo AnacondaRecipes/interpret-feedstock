@@ -17,8 +17,9 @@ outputs:
   - name: libebm
     script: build-libebm.sh  # [unix]
     script: bld-libebm.bat  # [win]
-    run_exports:
-      - {{ pin_subpackage('libebm', max_pin='x.x.x') }}
+    build:
+      run_exports:
+        - {{ pin_subpackage('libebm', max_pin='x.x.x') }}
     requirements:
       build:
         - {{ compiler('c') }}
