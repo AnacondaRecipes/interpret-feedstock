@@ -29,7 +29,7 @@ outputs:
 
     test:
       commands:
-        - where libebm.dll  # [win]
+        - if not exist %LIBRARY_BIN%\\libebm.dll exit 1  # [win]
         # IF NOT EXIST "%LIBRARY_BIN%\libebm.dll" EXIT /B 1  # [win]
         - test -f $PREFIX/lib/libebm.so       # [linux]
         - test -f $PREFIX/lib/libebm.dylib     # [osx]
@@ -37,6 +37,9 @@ outputs:
   - name: {{ name }}-core
     script: build_interpret-core.sh  # [unix]
     script: bld_interpret-core.bat  # [win]
+    build: 
+      missing_dso_whitelist:  # [linux]
+        - /lib64/libm.so.6    # [linux]
     requirements:
       build:
         - nodejs ==16.*
@@ -53,6 +56,8 @@ outputs:
         - scikit-learn >=0.18.1
         - joblib >=0.11
         - libebm  =={{ version }}
+        - libcxx  # [osx]
+        - libstdcxx-ng  # [linux]
     test:
       imports:
         - interpret
