@@ -9,7 +9,7 @@ source:
   url: https://github.com/interpretml/interpret/archive/db1a6f47b9bac288a7df80b2e489c327ce895751.tar.gz
   sha256: a083d22c879aca720fbaae077a65294d292b4bbf2977effac66cd947ee3e25ca
   patches: # [(linux and aarch64) or (osx and arm64)]
-    - 0001-build-arm-aarch64.patch # [(linux and aarch64) or (osx and arm64)]
+    - patches/0001-build-arm-aarch64.patch # [(linux and aarch64) or (osx and arm64)]
 
 build:
   number: 0
