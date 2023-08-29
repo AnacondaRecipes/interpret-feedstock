@@ -1,0 +1,110 @@
+diff --git a/build.sh b/build.sh
+index a23cf0ac..6a242b4a 100644
+--- a/build.sh
++++ b/build.sh
+@@ -238,9 +238,17 @@ if [ -n "${CC}" ] && [ -n "${CXX}" ]; then
+    os_type=`uname`
+    # TODO: change this to accept libebm_local.so or libebm_local.dylib to allow for weird architectures build using sdists
+    if [ "$os_type" = "Linux" ]; then
+-      final_binary="./python/interpret-core/interpret/lib/libebm_linux_x64.so"
++     if [ $(uname -m) = 'aarch64' ]; then
++       final_binary="./python/interpret-core/interpret/lib/libebm_linux_aarch64.so"
++     else
++       final_binary="./python/interpret-core/interpret/lib/libebm_linux_x64.so"
++     fi
+    elif [ "$os_type" = "Darwin" ]; then
+-      final_binary="./python/interpret-core/interpret/lib/libebm_mac_x64.dylib"
++     if [ $(uname -m) = 'arm64' ]; then
++       final_binary="./python/interpret-core/interpret/lib/libebm_mac_arm.dylib"
++     else
++       final_binary="./python/interpret-core/interpret/lib/libebm_mac_x64.dylib"
++     fi
+    else
+       printf "%s\n" "OS $os_type not recognized.  We support clang/clang++ on macOS and gcc/g++ on Linux"
+       exit 1
+@@ -486,6 +494,13 @@ if [ "$os_type" = "Linux" ]; then
+       exit $ret_code
+    fi
+ 
++   if [ $(uname -m) = 'aarch64' ]; then
++     release_64=0
++     debug_64=0
++     release_aarch64=1
++     debug_aarch64=0
++   fi
++
+    if [ $release_64 -eq 1 ]; then
+       ########################## Linux release|x64
+ 
+@@ -612,13 +627,48 @@ if [ "$os_type" = "Linux" ]; then
+       printf "%s\n" "$g_compile_out_full" > "$g_log_file_unsanitized"
+       copy_bin_files "$bin_path_unsanitized" "$bin_file" "$python_lib_unsanitized" "$staging_path_unsanitized"
+    fi
++   
++   if [ $release_aarch64 -eq 1 ]; then
++      ########################## Linux release|aarch64
++
++      printf "%s\n" "Compiling libebm with $c_compiler/$cpp_compiler for Linux release|aarch"
++      obj_path_unsanitized="$tmp_path_unsanitized/gcc/obj/release/linux/aarch64/libebm"
++      bin_path_unsanitized="$tmp_path_unsanitized/gcc/bin/release/linux/aarch64/libebm"
++      bin_file="libebm_linux_x64.so"
++      g_log_file_unsanitized="$obj_path_unsanitized/libebm_release_linux_aarch64_build_log.txt"
++      both_args_extra="-m64 -DNDEBUG -O3 -Wl"
++      c_args_specific="$c_args $both_args $both_args_extra"
++      cpp_args_specific="$cpp_args $both_args $both_args_extra"
++      # the linker wants to have the most dependent .o/.so/.dylib files listed FIRST
++      link_args_specific="$link_args $cpp_args_specific"
++   
++      g_all_object_files_sanitized=""
++      g_compile_out_full=""
++
++      make_initial_paths_simple "$obj_path_unsanitized" "$bin_path_unsanitized"
++      compile_directory_c "$c_compiler" "$c_args_specific $common_args" "$src_path_unsanitized/common_c" "$obj_path_unsanitized" "$is_asm" "C"
++      compile_directory_c "$c_compiler" "$c_args_specific $bridge_args" "$src_path_unsanitized/bridge_c" "$obj_path_unsanitized" "$is_asm" "C"
++      compile_directory_cpp "$cpp_compiler" "$cpp_args_specific $main_args -DZONE_cpu" "$src_path_unsanitized" "$obj_path_unsanitized" "$is_asm" "cpu"
++      compile_compute "$cpp_compiler" "$cpp_args_specific $compute_args" "$src_path_sanitized" "$src_path_unsanitized" "$obj_path_unsanitized" "$is_asm" "cpu"
++      compile_compute "$cpp_compiler" "$cpp_args_specific $compute_args -mavx512f" "$src_path_sanitized" "$src_path_unsanitized" "$obj_path_unsanitized" "$is_asm" "avx512f"
++      compile_compute "$cpp_compiler" "$cpp_args_specific $compute_args -mavx2 -mfma" "$src_path_sanitized" "$src_path_unsanitized" "$obj_path_unsanitized" "$is_asm" "avx2"
++      compile_file "$cpp_compiler" "$cpp_args_specific" "$src_path_unsanitized"/special/linux_wrap_functions.cpp "$obj_path_unsanitized" "$is_asm" "NONE"
++      link_file "$cpp_compiler" "$link_args_specific" "$bin_path_unsanitized" "$bin_file"
++      printf "%s\n" "$g_compile_out_full"
++      printf "%s\n" "$g_compile_out_full" > "$g_log_file_unsanitized"
++      copy_bin_files "$bin_path_unsanitized" "$bin_file" "$python_lib_unsanitized" "$staging_path_unsanitized"
++      copy_asm_files "$obj_path_unsanitized" "$tmp_path_unsanitized" "$staging_path_unsanitized/$bin_file" "asm_release_aarch64" "$is_asm"
++   fi
+ 
+ elif [ "$os_type" = "Darwin" ]; then
+    # reference on rpath & install_name: https://www.mikeash.com/pyblog/friday-qa-2009-11-06-linking-and-install-names.html
+ 
+-   # TODO: make these real options instead of forcing them to the same as x64
+-   release_arm=$release_64
+-   debug_arm=$debug_64
++   if [ $(uname -m) = 'arm64' ]; then
++     release_64=0
++     debug_64=0
++     release_arm=1
++     debug_arm=0
++   fi 
+ 
+    # try moving some of these clang specific warnings into both_args if g++ eventually supports them
+    c_compiler=clang
+diff --git a/python/interpret-core/interpret/utils/_native.py b/python/interpret-core/interpret/utils/_native.py
+index 519a3176..599d859d 100644
+--- a/python/interpret-core/interpret/utils/_native.py
++++ b/python/interpret-core/interpret/utils/_native.py
+@@ -645,6 +645,14 @@ class Native:
+             return os.path.join(
+                 package_path, "lib", "libebm_linux_x64{0}.so".format(debug_str)
+             )
++        elif (
++            platform.system() == "Linux"
++            and platform.machine() == "aarch64" 
++            and is_64_bit
++        ):
++            return os.path.join(
++                package_path, "lib", "libebm_linux_aarch64{0}.so".format(debug_str)
++            )
+         elif (
+             platform.system() == "Windows"
+             and platform.machine() == "AMD64"
+
