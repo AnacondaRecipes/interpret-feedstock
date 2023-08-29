@@ -1,5 +1,5 @@
 {% set name = "interpret" %}
-{% set version = "0.4.3" %}
+{% set version = "0.4.4" %}
 
 package:
   name: {{ name|lower }}-split
@@ -8,7 +8,7 @@ package:
 source:
   url: https://github.com/interpretml/interpret/archive/db1a6f47b9bac288a7df80b2e489c327ce895751.tar.gz
   sha256: a083d22c879aca720fbaae077a65294d292b4bbf2977effac66cd947ee3e25ca
-  patches:
+  patches: # [(linux and aarch64) or (osx and arm64)]
     - 0001-build-arm-aarch64.patch # [(linux and aarch64) or (osx and arm64)]
 
 build:
