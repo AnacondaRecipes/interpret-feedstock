@@ -1,0 +1,8 @@
+anaconda_config_version: 1
+upstream_sources:
+  - github:
+      identifier: interpretml/interpret
+    packages:
+      - interpret
+      - interpret-core
+      - libebm
